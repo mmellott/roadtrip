@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"log"
@@ -107,23 +108,23 @@ func client(config *Config) {
 
 	// Reader
 	go func() {
-		buf := NewPaddedBuffer(config.size)
+		buf := make([]byte, config.size)
 
 		for {
-			n, err := buf.ReadFrom(conn)
-			if err != nil {
-				ret <- err
-				return
-			}
-			if n != int64(config.size) {
-				ret <- fmt.Errorf("Read %v bytes of %v", n, config.size)
-				return
+			for i := 0; i < config.size; {
+				n, err := conn.Read(buf[i:])
+				if err != nil {
+					ret <- err
+					return
+				}
+
+				i += n
 			}
 
 			stats := Stats{rcvdTime: time.Now().UnixNano()}
 
 			var packet Packet
-			err = binary.Read(buf, binary.LittleEndian, &packet)
+			err = binary.Read(bytes.NewReader(buf), binary.LittleEndian, &packet)
 			if err != nil {
 				ret <- err
 				return
