@@ -40,7 +40,6 @@ func client(config *Config) {
 		var tick uint64
 		var numRcvd uint64
 		var numSent uint64
-		var count float64
 		var meanDelay float64
 		var dSquared float64
 
@@ -56,24 +55,20 @@ func client(config *Config) {
 					numSent = stats.packet.SequenceNum
 				}
 
-				count++
 				delay := float64(stats.rcvdTime-stats.packet.Timestamp) / 1e6
-				newMeanDelay := meanDelay + (delay-meanDelay)/count
+				newMeanDelay := meanDelay + (delay-meanDelay)/float64(numRcvd)
 				dSquared = dSquared + (delay-newMeanDelay)*(delay-meanDelay)
 				meanDelay = newMeanDelay
 			case <-ticker.C:
 				tick++
 				fmt.Printf("%v", tick)
-				fmt.Printf(" %v", time.Now().UnixNano()/1e6)
-				fmt.Printf(" %v", config.size)
-				fmt.Printf(" %v", numRcvd)
-				fmt.Printf(" %v", numSent)
-				fmt.Printf(" %v", meanDelay)
-				fmt.Printf(" %v", math.Sqrt(dSquared/(count-1)))
+				fmt.Printf(",%v", time.Now().UnixNano()/1e6)
+				fmt.Printf(",%v", config.size)
+				fmt.Printf(",%v", numRcvd)
+				fmt.Printf(",%v", numSent)
+				fmt.Printf(",%v", meanDelay)
+				fmt.Printf(",%v", math.Sqrt(dSquared/(float64(numRcvd)-1)))
 				fmt.Println("")
-
-				count = 0
-				meanDelay = 0
 			}
 		}
 	}()
